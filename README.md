@@ -1,2 +1,3 @@
-# Skystone-teamcode
-2020 赛季 Teamcode
+# README
+
+2020 Skystone 赛季 Teamcode
