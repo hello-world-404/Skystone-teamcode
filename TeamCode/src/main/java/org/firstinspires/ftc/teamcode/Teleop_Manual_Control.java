@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name="Teleop manual control")
 
@@ -14,23 +15,26 @@ public class Teleop_Manual_Control extends LinearOpMode {
 	public DcMotor frontLeft = null, frontRight = null, backLeft = null, backRight = null;
 	public DcMotor leftIntake = null, rightIntake = null;
 	public DcMotor riseMotor = null;
-	
-	
+
+
 	public CRServo linearCraneServo = null;
 	public Servo rotateServo = null, pickServo = null;
 	public Servo leftStake = null, rightStake = null;
-	
+
 	boolean isRotate, isStake, isPickup;
-	
+
+	String button;
+
 	@Override
-	public void runOpMode(){
-		
+	public void runOpMode() {
+		ElapsedTime runtime = new ElapsedTime();
+
 		//Hardware map 初始化变量
 		frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
 		frontRight = hardwareMap.get(DcMotor.class, "frontRight");
 		backLeft = hardwareMap.get(DcMotor.class, "backLeft");
 		backRight = hardwareMap.get(DcMotor.class, "backRight");
-		
+
 		leftIntake = hardwareMap.get(DcMotor.class, "leftIntake");
 		rightIntake = hardwareMap.get(DcMotor.class, "rightIntake");
 		
@@ -64,30 +68,42 @@ public class Teleop_Manual_Control extends LinearOpMode {
 
 		leftStake.setPosition(0.3);
 		rightStake.setPosition(0.3);
-		
+
 		rotateServo.setPosition(0);
 		pickServo.setPosition(0);
-		
+
 		telemetry.addData("Status", "Initialized");
 		telemetry.update();
-		
+
 		waitForStart();
-		
+		runtime.reset();
+
 		//当驾驶员按下“开始”按钮后
-		while(opModeIsActive()){
-			
+		while (opModeIsActive()) {
+
+
 			//计算电机动力
 			calculateDrivePower();
-			
+
 			//控制上升机构
 			rise();
-			
+
 			//控制吸取机构
 			intake();
-			
+
 			//控制前后移动电机（横向杆）
 			operateLCrane();
-			
+
+			stake();
+
+			rotate();
+
+			pick();
+
+			telemetry.addData("Button pressed", button);
+			telemetry.addData("Run time", runtime.toString());
+			telemetry.addData("Status", "Running");
+			telemetry.update();
 		}
 	}
 	
@@ -100,21 +116,22 @@ public class Teleop_Manual_Control extends LinearOpMode {
 	 * @control Gamepad1 --> gamepad1.a (要按X) --> 检测是否卡住地基 --> 卡住地基: 松开地基 没卡住地基：卡住地基
 	 * @remarks 需要测试
 	 **/
-	public void stake(){
-		if(gamepad1.a){
-			if(isStake){
-				leftStake.setPosition(0.0);
-				rightStake.setPosition(0.0);
+
+	public void stake() {
+		if (gamepad1.a) {
+			button = "x";
+			if (isStake) {
+				leftStake.setPosition(0);
+				rightStake.setPosition(0);
 				isStake = false;
-			}
-			else{
+			} else {
 				leftStake.setPosition(0.3);
 				rightStake.setPosition(0.3);
 				isStake = true;
 			}
 		}
 	}
-	
+
 	
 	
 	/**
@@ -126,31 +143,36 @@ public class Teleop_Manual_Control extends LinearOpMode {
 	 * @control Gamepad2 --> gamepad2.x (要按A) --> 检测是否旋转至1 --> 已经旋转至1：旋转回0  未旋转至1: 旋转到 val
 	 * @remarks val需要更改，需要实际测量位置
 	 **/
-	public void rotate(){
-		if(gamepad2.x){
-			if(isRotate){
+	public void rotate() {
+		if (gamepad2.x) {
+			button = "a";
+			if (isRotate) {
 				rotateServo.setPosition(0.0);
 				isRotate = false;
-			}
-			else{
-				//rotateServo.setPosition(val);
+			} else {
+				rotateServo.setPosition(0.35);
 				isRotate = true;
 			}
 		}
 	}
-	
+
 	/**
-	 * 
-	 * 
-	**/
-	
-	public void pick(){
-		if(gamepad2.b){
-			if(isPickup){
-				//pickServo.setPosition();
-			}	
-			else{
-				
+	 * @return none
+	 * @status 已决定
+	 * @do 控制抓取电机
+	 * @operator Gamepad2
+	 * @control Gamepad2 --> gamepad2.b (按Y) --> 检测是否抓取 --> 已抓取：松开 未抓取：抓取
+	 **/
+
+	public void pick() {
+		if (gamepad2.b) {
+			button = "y";
+			if (isPickup) {
+				pickServo.setPosition(0.0);
+				isPickup = false;
+			} else {
+				pickServo.setPosition(0.1);
+				isPickup = true;
 			}
 		}
 	}
@@ -165,32 +187,16 @@ public class Teleop_Manual_Control extends LinearOpMode {
 	 * @control Gamepad2 --> dpad_right 往前移动（车前方），Gamepad2 --> dpad_left 往后移动（车辆后方放置石块）
 	 * @remarks LCraneServo在实际操作的时候并不稳定，需要寻找原因。
 	 **/
-	public void operateLCrane(){
-		if(gamepad2.dpad_left){
+	public void operateLCrane() {
+		if (gamepad2.dpad_left) {
+			button = "dpad_left";
 			linearCraneServo.setPower(0.8);
+		} else if (gamepad2.dpad_right) {
+			button = "dpad_right";
+			linearCraneServo.setPower(-0.8);
+		} else {
+			linearCraneServo.setPower(0.0);
 		}
-		else if(gamepad2.dpad_right){
-			linearCraneServo.setPower(-0.8);			
-		}
-		else{
-			linearCraneServo.setPower(0.0);	
-		}
-		
-		
-		//新代码，未测试
-		//@remarks .setPower(0.5) --> 电机不发力 .setPower(1) --> 电机往一边满速转动 .setPower(0) --> 电机往另一边满速转动
-		
-		/*
-		if(gamepad2.dpad_left){
-			linearCraneServo.setPower(0);
-		}
-		
-		if(gamepad2.dpad_right){
-			linearCraneServo.setPower(1);
-		}
-		
-		linearCraneServo.setPower(0.5);
-		*/
 	}
 	
 	
@@ -202,45 +208,42 @@ public class Teleop_Manual_Control extends LinearOpMode {
 	 * @control Gamepad1 --> left_bumper 吸取, Gamepad1 --> right_bumper (吐出)
 	 * @remarks 吐出只是为了防止方块卡在中间而设计的。Removed during production
 	 **/
-	 public void intake(){
-	 	if(gamepad1.left_bumper){
-	 		leftIntake.setPower(1.0);
-	 		rightIntake.setPower(1.0);
-	 	}
-	 	else if(gamepad1.right_bumper){
-	 		leftIntake.setPower(1.0);
-	 		rightIntake.setPower(1.0);	
-	 	}
-	 	else{
-		 	leftIntake.setPower(0.0);
-		 	rightIntake.setPower(0.0);
-	 	}
-	 	
+	 public void intake() {
+		 if (gamepad1.left_bumper) {
+			 button = "leftBumper";
+			 leftIntake.setPower(-1.0);
+			 rightIntake.setPower(-1.0);
+		 } else if (gamepad1.right_bumper) {
+			 button = "rightBumper";
+			 leftIntake.setPower(1.0);
+			 rightIntake.setPower(1.0);
+		 } else {
+			 leftIntake.setPower(0.0);
+			 rightIntake.setPower(0.0);
+		 }
+
 	 }
-	 
-	 
-	 
+
+
 	/**
 	 * @return none
 	 * @do 控制上升电机
 	 * @operator Gamepad1 / Gamepad2 操作人员有待争议。
 	 * @control Gamepad1/2 --> dpad_up 上升电机，Gamepad1/2 --> dpad_down 下降电机
-	 * 
-	 * 
 	 * @others 考虑是否要在电机进行上升的时候抓取方块。
 	 **/
-	public void rise(){
-		if(gamepad1.dpad_down){
+	public void rise() {
+		if (gamepad2.dpad_down) {
+			button = "dpad_down";
 			riseMotor.setPower(1.0);
-		}
-		else if(gamepad1.dpad_up){
-			riseMotor.setPower(1.0);			
-		}
-		else{
+		} else if (gamepad2.dpad_up) {
+			button = "dpad_up";
+			riseMotor.setPower(-1.0);
+		} else {
 			riseMotor.setPower(0.0);
 		}
 	}
-	
+
 	/**
 	 * @return none
 	 * @do 计算电机电力并将动力传至电机
