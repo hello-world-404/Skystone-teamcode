@@ -27,9 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
-
-import android.graphics.Color;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -71,13 +69,6 @@ public class Color_Sensor_Test extends LinearOpMode {
         // loop and read the RGB and distance data.
         // Note we use opModeIsActive() as our loop condition because it is an interruptible method.
         while (opModeIsActive()) {
-            // convert the RGB values to HSV values.
-            // multiply by the SCALE_FACTOR.
-            // then cast it back to int (SCALE_FACTOR is a double)
-            Color.RGBToHSV((int) (cSensor.red() * SCALE_FACTOR),
-                    (int) (cSensor.green() * SCALE_FACTOR),
-                    (int) (cSensor.blue() * SCALE_FACTOR),
-                    hsvValues);
 
             // send the info back to driver station using telemetry function.
             telemetry.addData("Distance (cm)",
@@ -87,6 +78,7 @@ public class Color_Sensor_Test extends LinearOpMode {
             telemetry.addData("Green", cSensor.green());
             telemetry.addData("Blue ", cSensor.blue());
             telemetry.addData("Hue", hsvValues[0]);
+
 
             telemetry.update();
         }

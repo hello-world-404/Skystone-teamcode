@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.deprecated;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -7,14 +7,17 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+
 @TeleOp(name="Teleop manual control")
 
 public class Teleop_Manual_Control extends LinearOpMode {
+
 
 	//声明硬件变量
 	public DcMotor frontLeft = null, frontRight = null, backLeft = null, backRight = null;
 	public DcMotor leftIntake = null, rightIntake = null;
 	public DcMotor riseMotor = null;
+
 
 
 	public CRServo linearCraneServo = null;
@@ -91,20 +94,23 @@ public class Teleop_Manual_Control extends LinearOpMode {
 			//控制吸取机构
 			intake();
 
-			//控制前后移动电机（横向杆）
-			operateLCrane();
+            //控制前后移动电机（横向杆）
+            operateLCrane();
 
-			stake();
+            stake();
 
-			rotate();
+            rotate();
 
-			pick();
+            pick();
 
-			telemetry.addData("Button pressed", button);
-			telemetry.addData("Run time", runtime.toString());
-			telemetry.addData("Status", "Running");
-			telemetry.update();
-		}
+            telemetry.addData("gamepad1.left_stick_x", gamepad1.left_stick_x);
+            telemetry.addData("gamepad1.left_stick_y", gamepad1.left_stick_y);
+            telemetry.addData("gamepad2.right_stick_x", gamepad1.right_stick_x);
+            telemetry.addData("Button pressed", button);
+            telemetry.addData("Run time", runtime.toString());
+            telemetry.addData("Status", "Running");
+            telemetry.update();
+        }
 	}
 	
 	/**
@@ -187,20 +193,23 @@ public class Teleop_Manual_Control extends LinearOpMode {
 	 * @control Gamepad2 --> dpad_right 往前移动（车前方），Gamepad2 --> dpad_left 往后移动（车辆后方放置石块）
 	 * @remarks LCraneServo在实际操作的时候并不稳定，需要寻找原因。
 	 **/
-	public void operateLCrane() {
+
+    public void operateLCrane() {
 		if (gamepad2.dpad_left) {
-			button = "dpad_left";
-			linearCraneServo.setPower(0.8);
-		} else if (gamepad2.dpad_right) {
-			button = "dpad_right";
-			linearCraneServo.setPower(-0.8);
-		} else {
+            button = "dpad_left";
+            linearCraneServo.setPower(0.8);
+            sleep(1000);
+        } else if (gamepad2.dpad_right) {
+            button = "dpad_right";
+            linearCraneServo.setPower(-0.8);
+            sleep(1000);
+        } else {
 			linearCraneServo.setPower(0.0);
 		}
 	}
-	
-	
-	/**
+
+
+    /**
 	 *@status 谁来控制还有待争议。 
 	 * @return none
 	 * @do 控制吸取电机
